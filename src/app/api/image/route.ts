@@ -2,11 +2,17 @@ import { NextResponse, NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/utils/authOptions";
 import prisma from "@/utils/prisma";
+import { toast } from "@/hooks/use-toast";
 
 export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session) {
+        toast({
+            title: "Error",
+            description: "Please Login",
+            variant: "destructive",
+        });
         return NextResponse.json({ error: "You are Unauthorized" }, { status: 401 });
     }
 
@@ -17,6 +23,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
+        toast({
+            title: "Error",
+            description: "Please Login",
+            variant: "destructive",
+        });
         return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
@@ -41,6 +52,11 @@ export async function GET() {
     const session = await getServerSession(authOptions);
 
     if (!session) {
+        toast({
+            title: "Error",
+            description: "Please Login",
+            variant: "destructive",
+        });
         return NextResponse.json({ error: "You are Unauthorized" }, { status: 401 });
     }
 
@@ -49,6 +65,11 @@ export async function GET() {
     });
 
     if (!user) {
+        toast({
+            title: "Error",
+            description: "Please Login",
+            variant: "destructive",
+        });
         return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
@@ -68,6 +89,11 @@ export async function DELETE(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session) {
+        toast({
+            title: "Error",
+            description: "Please Login",
+            variant: "destructive",
+        });
         return NextResponse.json({ error: "You are Unauthorized" }, { status: 401 });
     }
 

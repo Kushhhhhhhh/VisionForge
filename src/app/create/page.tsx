@@ -61,7 +61,7 @@ export default function Create() {
             } else {
                 toast({
                     title: "Error",
-                    description: "Failed to generate image. Please try again.",
+                    description: "Please Login and try again. If the issue persist , contact developer",
                     variant: "destructive",
                 });
             }
