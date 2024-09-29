@@ -93,7 +93,7 @@ export default function Home() {
             <MotionDiv variants={itemVariants} className="mt-4 sm:mt-6 md:mt-8 lg:mt-10">
               <Link href="/create">
                 <CoolMode>
-                <Button className='px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3 text-sm sm:text-base md:text-lg font-semibold'>Get Started</Button>
+                  <Button className='px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3 text-sm sm:text-base md:text-lg font-semibold'>Get Started</Button>
                 </CoolMode>
               </Link>
             </MotionDiv>
