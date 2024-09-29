@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import dynamic from 'next/dynamic';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { z } from "zod";
@@ -16,25 +17,34 @@ import {
 import Image from "next/image";
 import { Loader2, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "next-themes";
+import ShimmerButton from "@/components/ui/shimmer-button";
+
+const Particles = dynamic(() => import("@/components/ui/particles"), { ssr: false });
 
 const formSchema = z.object({
     prompt: z.string().min(7, {
         message: "Prompt must be at least 7 characters.",
     }),
-})
+});
+
+const imageEffectsInitialState = {
+    isBlurred: false,
+    isBlackAndWhite: false,
+    isBrightened: false,
+    isDarkened: false,
+    isWet: false,
+    isSepia: false,
+    isInverted: false,
+};
 
 export default function Create() {
+    
     const [outputImage, setOutputImage] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
-    const [imageEffects, setImageEffects] = useState({
-        isBlurred: false,
-        isBlackAndWhite: false,
-        isBrightened: false,
-        isDarkened: false,
-        isWet: false,
-        isSepia: false,
-        isInverted: false,
-    });
+    const [imageEffects, setImageEffects] = useState(imageEffectsInitialState);
+    const { theme } = useTheme();
+    const [color, setColor] = useState("#ffffff");
 
     const { toast } = useToast();
 
@@ -50,32 +60,29 @@ export default function Create() {
         try {
             const response = await fetch("/api/image", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(values),
             });
-            if (response.status === 200) {
+            if (response.ok) {
                 const data = await response.json();
                 setOutputImage(data.url);
             } else {
-                toast({
-                    title: "Error",
-                    description: "Please Login and try again. If the issue persist , contact developer",
-                    variant: "destructive",
-                });
+                throw new Error("Error fetching image");
             }
         } catch (error) {
             console.error("Error generating image:", error);
+            toast({
+                title: "Error",
+                description: error instanceof Error ? error.message : "An unknown error occurred",
+                variant: "destructive",
+            });
         } finally {
             setLoading(false);
         }
     }, [toast]);
 
     const handleDownload = useCallback(() => {
-        if (outputImage) {
-            window.open(outputImage, '_blank');
-        }
+        if (outputImage) window.open(outputImage, '_blank');
     }, [outputImage]);
 
     const toggleEffect = useCallback((effect: keyof typeof imageEffects) => {
@@ -88,20 +95,45 @@ export default function Create() {
     }, []);
 
     const imageClassName = useMemo(() => {
-        const { isBlurred, isBlackAndWhite, isBrightened, isDarkened, isWet, isSepia, isInverted } = imageEffects;
-        return `rounded-xl absolute top-0 left-0 
-            ${isBlurred ? 'blur-sm' : ''} 
-            ${isBlackAndWhite ? 'grayscale' : ''} 
-            ${isBrightened ? 'brightness-125' : ''} 
-            ${isDarkened ? 'brightness-75' : ''} 
-            ${isWet ? 'contrast-125 saturate-150' : ''} 
-            ${isSepia ? 'sepia' : ''} 
-            ${isInverted ? 'invert' : ''}`;
+        return Object.entries(imageEffects).reduce((className, [effect, isActive]) => {
+            if (isActive) {
+                switch (effect) {
+                    case 'isBlurred':
+                        return `${className} blur-sm`;
+                    case 'isBlackAndWhite':
+                        return `${className} grayscale`;
+                    case 'isBrightened':
+                        return `${className} brightness-125`;
+                    case 'isDarkened':
+                        return `${className} brightness-75`;
+                    case 'isWet':
+                        return `${className} contrast-125 saturate-150`;
+                    case 'isSepia':
+                        return `${className} sepia`;
+                    case 'isInverted':
+                        return `${className} invert`;
+                    default:
+                        return className;
+                }
+            }
+            return className;
+        }, 'rounded-xl absolute top-0 left-0 transition-all duration-300');
     }, [imageEffects]);
 
+    useEffect(() => {
+        setColor(theme === "dark" ? "#ffffff" : "#000000");
+    }, [theme]);
+
     return (
-        <div className="w-full min-h-dvh p-3 flex flex-col items-center justify-start pt-[72px]">
-            <div className="w-full p-3">
+        <div className="w-full h-full p-3 flex flex-col items-center justify-start pt-[72px] overflow-auto relative">
+            <Particles
+                className="absolute inset-0"
+                quantity={100}
+                ease={20}
+                color={color}
+                refresh
+            />
+            <div className="w-full p-3 relative z-10">
                 <h1 className="text-center font-bold text-white text-3xl sm:text-4xl md:text-5xl">
                     Create
                 </h1>
@@ -109,7 +141,7 @@ export default function Create() {
                     Generate stunning visuals with AI-powered image creation
                 </p>
             </div>
-            <div className="flex flex-col md:flex-row w-full h-full gap-3 mt-4">
+            <div className="flex flex-col md:flex-row w-full h-full gap-3 mt-4 relative z-10">
                 <div className="__form flex-1 md:flex-[2] flex justify-center items-start flex-col">
                     <p className="text-white/80 text-base sm:text-lg md:text-xl font-bold mb-2">
                         Enter your prompt below to generate any image you envision!
@@ -132,15 +164,16 @@ export default function Create() {
                                     </FormItem>
                                 )}
                             />
-                            <Button type="submit" disabled={loading} className="w-full sm:w-auto">
-                                {loading ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Generating...
-                                    </>
-                                ) : (
-                                    "Generate"
-                                )}
+                            <Button className="shadow-2xl" type="submit" disabled={loading}>
+                                <span className="whitespace-pre-wrap text-center text-sm font-medium leading-none tracking-tight lg:text-lg sm:w-auto">
+                                    {loading ? (
+                                        <>
+                                            Generating...
+                                        </>
+                                    ) : (
+                                        "Generate"
+                                    )}
+                                </span>
                             </Button>
                         </form>
                     </Form>
@@ -164,23 +197,25 @@ export default function Create() {
                             </div>
                             <div className="mt-4 flex justify-center flex-wrap gap-2">
                                 {Object.entries(imageEffects).map(([effect, isActive]) => (
-                                    <Button
+                                    <ShimmerButton
                                         key={effect}
                                         onClick={() => toggleEffect(effect as keyof typeof imageEffects)}
-                                        variant="secondary"
-                                        size="sm"
+                                        className={`px-3 py-1 text-sm ${isActive ? 'bg-blue-500' : ''}`}
                                     >
-                                        {isActive ? effect.replace('is', '') : effect.replace('is', '')}
-                                    </Button>
+                                        <span className="text-white">
+                                            {effect.replace('is', '')}
+                                        </span>
+                                    </ShimmerButton>
                                 ))}
-                                <Button
+                                <ShimmerButton
                                     onClick={handleDownload}
-                                    variant="secondary"
-                                    size="sm"
+                                    className="px-3 py-1 text-sm"
                                 >
-                                    <Download className="mr-2 h-4 w-4" />
-                                    Download
-                                </Button>
+                                    <span className="text-white flex items-center">
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Download
+                                    </span>
+                                </ShimmerButton>
                             </div>
                         </div>
                     ) : (

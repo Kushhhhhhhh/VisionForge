@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Loader2, Download, Trash2 } from 'lucide-react';
 import { Post } from '@prisma/client';
 import Image from 'next/image';
@@ -8,11 +8,12 @@ import { Lens } from '@/components/ui/lens';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Profile() {
+  
   const [loading, setLoading] = useState<boolean>(true);
   const [posts, setPosts] = useState<Post[]>([]);
   const [hovering, setHovering] = useState<string | null>(null);
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/image');
@@ -28,13 +29,13 @@ export default function Profile() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleDownload = (url: string) => {
+  const handleDownload = useCallback((url: string) => {
     window.open(url, '_blank');
-  };
+  }, []);
 
-  const handleRemove = async (id: string) => {
+  const handleRemove = useCallback(async (id: string) => {
     try {
       const response = await fetch(`/api/image`, {
         method: 'DELETE',
@@ -52,11 +53,11 @@ export default function Profile() {
     } catch (error) {
       console.error('Error deleting post:', error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [fetchPosts]);
 
   return (
     <div className='w-full min-h-dvh flex justify-center items-center p-6 pt-[72px]'>
@@ -68,12 +69,13 @@ export default function Profile() {
         </div>
       ) : (
         <div className='w-full h-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6'>
-          <AnimatePresence mode='wait'>
+          <AnimatePresence>
             {posts.map((post, index) => (
               <motion.div
                 key={post.id}
-                initial={{ opacity: 0, scale: 0.95, filter: 'blur(10px)' }}
-                animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.3, ease: 'easeInOut', delay: index * 0.05 }}
                 className='bg-[#212121] text-white/80 shadow-md rounded-lg overflow-hidden hover:scale-105 transition-transform duration-500 ease-in-out p-4'
               >
@@ -87,7 +89,7 @@ export default function Profile() {
                     width={200}
                     height={200}
                     className='w-full object-cover mb-3'
-                    priority
+                    loading="lazy"
                   />
                 </Lens>
                 <motion.div

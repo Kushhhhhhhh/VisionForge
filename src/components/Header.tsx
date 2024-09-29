@@ -36,7 +36,11 @@ const Header = () => {
             </Button>
             <Link href="/profile">
               <Avatar>
-                <AvatarImage src={session.user?.image || ""} className="w-10 h-10 rounded-full" />
+                <AvatarImage 
+                src={session.user?.image || ""} 
+                className="w-10 h-10 rounded-full" 
+                alt={session.user?.name?.charAt(0).toUpperCase() || undefined}
+                />
                 <AvatarFallback>{session.user?.name?.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
             </Link>
