@@ -65,7 +65,11 @@ export default function Create() {
             });
             if (response.ok) {
                 const data = await response.json();
-                setOutputImage(data.url);
+                if (data && data.url) {
+                    setOutputImage(data.url);
+                } else {
+                    throw new Error("Invalid response from server");
+                }
             } else {
                 throw new Error("Error fetching image");
             }
@@ -167,9 +171,7 @@ export default function Create() {
                             <Button className="shadow-2xl" type="submit" disabled={loading}>
                                 <span className="whitespace-pre-wrap text-center text-sm font-medium leading-none tracking-tight lg:text-lg sm:w-auto">
                                     {loading ? (
-                                        <>
-                                            Generating...
-                                        </>
+                                        <Loader2 className="h-4 w-4 animate-spin" />
                                     ) : (
                                         "Generate"
                                     )}
