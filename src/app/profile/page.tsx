@@ -1,17 +1,15 @@
 'use client';
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Loader2, Download, Trash2 } from 'lucide-react';
 import { Post } from '@prisma/client';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Lens } from '@/components/ui/lens';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion, useInView } from 'framer-motion';
+import { CardBody, CardContainer, CardItem } from "@/components/ui/3d-card";
 
 export default function Profile() {
-  
   const [loading, setLoading] = useState<boolean>(true);
   const [posts, setPosts] = useState<Post[]>([]);
-  const [hovering, setHovering] = useState<string | null>(null);
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -59,67 +57,118 @@ export default function Profile() {
     fetchPosts();
   }, [fetchPosts]);
 
+  const truncateText = (text: string, limit: number) => {
+    if (text.length <= limit) return text;
+    return text.slice(0, limit) + '...';
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 50, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 12
+      }
+    }
+  };
+
+  const PostCard = ({ post }: { post: Post }) => {
+    const ref = useRef(null);
+    const isInView = useInView(ref, { once: true, amount: 0.2 });
+
+    return (
+      <motion.div
+        ref={ref}
+        initial="hidden"
+        animate={isInView ? "visible" : "hidden"}
+        variants={itemVariants}
+      >
+        <CardContainer className="inter-var w-full">
+          <CardBody className="bg-[#212121] text-white/80 shadow-md rounded-lg overflow-hidden hover:scale-105 transition-transform duration-500 ease-in-out p-4 flex flex-col h-[400px]">
+            <CardItem
+              translateZ="100"
+              className="w-full aspect-square mb-4 flex-shrink-0"
+            >
+              <Image
+                src={post.url}
+                alt={post.prompt}
+                layout="responsive"
+                width={200}
+                height={200}
+                className='object-cover rounded-md'
+                loading="lazy"
+              />
+            </CardItem>
+            <CardItem
+              translateZ="50"
+              className="w-full mb-3 flex-grow overflow-y-auto"
+            >
+              <h2 className='text-sm font-thin'>{truncateText(post.prompt, 40)}</h2>
+            </CardItem>
+            <CardItem
+              translateZ="75"
+              className="w-full flex justify-between space-x-2 mt-auto"
+            >
+              <Button
+                onClick={() => handleDownload(post.url)}
+                className='flex-1 flex items-center justify-center text-blue-500 text-sm py-2'
+              >
+                <Download className='mr-1 h-4 w-4' />
+                Download
+              </Button>
+              <Button
+                onClick={() => handleRemove(post.id)}
+                className='flex-1 flex items-center justify-center text-red-500 text-sm py-2'
+              >
+                <Trash2 className='mr-1 h-4 w-4' />
+                Remove
+              </Button>
+            </CardItem>
+          </CardBody>
+        </CardContainer>
+      </motion.div>
+    );
+  };
+
   return (
-    <div className='w-full min-h-dvh flex justify-center items-center p-6 pt-[72px]'>
+    <div className='w-full min-h-screen flex justify-center items-start p-4 sm:p-6 pt-20 sm:pt-24'>
       {loading ? (
         <Loader2 className='animate-spin' />
       ) : posts.length === 0 ? (
-        <div className='text-white/50'>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className='text-white/50'
+        >
           No posts available. Please generate an image first.
-        </div>
+        </motion.div>
       ) : (
-        <div className='w-full h-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6'>
+        <motion.div 
+          className='w-full max-w-7xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6'
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
           <AnimatePresence>
-            {posts.map((post, index) => (
-              <motion.div
-                key={post.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.3, ease: 'easeInOut', delay: index * 0.05 }}
-                className='bg-[#212121] text-white/80 shadow-md rounded-lg overflow-hidden hover:scale-105 transition-transform duration-500 ease-in-out p-4'
-              >
-                <Lens
-                  hovering={hovering === post.id}
-                  setHovering={(hover) => setHovering(hover ? post.id : null)}
-                >
-                  <Image
-                    src={post.url}
-                    alt={post.prompt}
-                    width={200}
-                    height={200}
-                    className='w-full object-cover mb-3'
-                    loading="lazy"
-                  />
-                </Lens>
-                <motion.div
-                  animate={{
-                    filter: hovering === post.id ? 'blur(2px)' : 'blur(0px)',
-                  }}
-                  className='p-3'
-                >
-                  <h2 className='text-lg'>{post.prompt}</h2>
-                  <div className='flex justify-between mt-2'>
-                    <Button
-                      onClick={() => handleDownload(post.url)}
-                      className='flex items-center text-blue-500'
-                    >
-                      <Download className='mr-1 h-4 w-4' />
-                      Download
-                    </Button>
-                    <Button
-                      onClick={() => handleRemove(post.id)}
-                      className='flex items-center text-red-500'
-                    >
-                      <Trash2 className='mr-1 h-4 w-4' />
-                      Remove
-                    </Button>
-                  </div>
-                </motion.div>
-              </motion.div>
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} />
             ))}
           </AnimatePresence>
-        </div>
+        </motion.div>
       )}
     </div>
   );
