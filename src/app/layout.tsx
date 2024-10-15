@@ -20,7 +20,7 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "VisionForge - Free Image Generation, AI Image Creation, Stunning Visuals",
   description: "VisionForge is a cutting-edge platform for free image generation, leveraging advanced AI to create stunning visuals effortlessly. Perfect for designers, marketers, and creatives seeking high-quality images.",
-  keywords: "free image generation, AI image creation, stunning visuals, high-quality images, designers, marketers, creatives, advanced AI, VisionForge, image generation platform, free images, AI-powered visuals, high-quality graphics"
+  keywords: "free image generation, AI image creation, stunning visuals, high-quality images, designers, marketers, creatives, advanced AI, VisionForge, image generation platform, free images, AI-powered visuals, high-quality graphics, image creation, AI, visual design, graphic design, image generation tool, image creation tool, AI tool, design tool, creative tool"
 };
 
 export default function RootLayout({

@@ -35,11 +35,17 @@ export async function POST(request: NextRequest) {
     const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?model=flux&seed=${randomSeed}&width=512&height=512&nologo=true&enhance=true`;
 
     try {
-        const response = await fetch(imageUrl);
+        const response = await fetch(imageUrl, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        // If the fetch is successful, proceed with creating the post
+
         await prisma.post.create({
             data: {
                 url: imageUrl,
@@ -50,6 +56,7 @@ export async function POST(request: NextRequest) {
         });
 
         return NextResponse.json({ url: imageUrl });
+        
     } catch (error) {
         console.error("Error fetching image:", error);
         return NextResponse.json({ error: "Failed to generate image" }, { status: 502 });
