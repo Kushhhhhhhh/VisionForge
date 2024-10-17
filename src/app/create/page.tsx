@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import dynamic from 'next/dynamic';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

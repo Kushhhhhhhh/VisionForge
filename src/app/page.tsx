@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Spline from '@splinetool/react-spline/next';
 import dynamic from 'next/dynamic';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Vortex } from "@/components/ui/vortex";
 import { CoolMode } from '@/components/ui/cool-mode';
 
@@ -52,7 +52,7 @@ export default function Home() {
     },
   }), []);
 
-  useEffect(() => {
+  const loadModel = useCallback(() => {
     const cachedModelState = localStorage.getItem('modelLoaded');
     if (cachedModelState === 'true') {
       setIsModelLoaded(true);
@@ -65,6 +65,10 @@ export default function Home() {
       return () => clearTimeout(timer);
     }
   }, []);
+
+  useEffect(() => {
+    loadModel();
+  }, [loadModel]);
 
   return (
     <main className="w-full h-screen overflow-hidden">
