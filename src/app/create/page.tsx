@@ -192,7 +192,7 @@ export default function Create() {
                                     src={outputImage}
                                     alt="Generated Image"
                                     layout="fill"
-                                    objectFit="contain"
+                                    objectFit="cover"
                                     className={imageClassName}
                                     priority
                                 />

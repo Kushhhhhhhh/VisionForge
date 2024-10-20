@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        await prisma.post.create({
+        const post = await prisma.post.create({
             data: {
                 url: imageUrl,
                 prompt,
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
             },
         });
 
-        return NextResponse.json({ url: imageUrl });
+        return NextResponse.json({ url: imageUrl, postId: post.id });
         
     } catch (error) {
         console.error("Error fetching image:", error);
