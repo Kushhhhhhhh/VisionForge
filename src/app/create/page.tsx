@@ -61,36 +61,24 @@ export default function Create() {
     });
 
     const onSubmit = useCallback(async (values: z.infer<typeof formSchema>) => {
-        setLoading(true);
         try {
-            const response = await fetch("/api/image", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(values),
-            });
-
-            if (!response.ok) {
-                const errorMessage = await response.text();
-                throw new Error(`Server error: ${response.status} - ${errorMessage}`);
-            }
-
-            const data = await response.json();
-            if (data?.url) {
-                setOutputImage(data.url);
-            } else {
-                throw new Error("Invalid response from server");
-            }
+          setLoading(true);
+          const response = await fetch("/api/image", {
+            method: "POST",
+            body: JSON.stringify(values),
+          });
+          const data = await response.json();
+          if (response.status === 200) {
+            setOutputImage(data.url);
+          } else {
+            toast({ variant: "destructive", description: data.error });
+          }
         } catch (error) {
-            console.error("Error generating image:", error);
-            toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "An unknown error occurred",
-                variant: "destructive",
-            });
+          console.error(error);
         } finally {
-            setLoading(false);
+          setLoading(false);
         }
-    }, [toast]);
+      }, [setLoading, setOutputImage, toast]);
 
     const handleDownload = useCallback(() => {
         if (outputImage) {
