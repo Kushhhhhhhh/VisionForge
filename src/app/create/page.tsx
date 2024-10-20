@@ -1,34 +1,42 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import dynamic from 'next/dynamic';
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
+import { Loader2, Download } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "next-themes";
+import ShimmerButton from "@/components/ui/shimmer-button";
 import {
     Form,
     FormControl,
     FormField,
     FormItem,
     FormMessage,
-} from "@/components/ui/form"
-import Image from "next/image";
-import { Loader2, Download } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useTheme } from "next-themes";
-import ShimmerButton from "@/components/ui/shimmer-button";
+} from "@/components/ui/form";
 
 const Particles = dynamic(() => import("@/components/ui/particles"), { ssr: false });
 
 const formSchema = z.object({
-    prompt: z.string().min(7, {
-        message: "Prompt must be at least 7 characters.",
-    }),
+    prompt: z.string().min(7, { message: "Prompt must be at least 7 characters." }),
 });
 
-const imageEffectsInitialState = {
+type ImageEffects = {
+    isBlurred: boolean;
+    isBlackAndWhite: boolean;
+    isBrightened: boolean;
+    isDarkened: boolean;
+    isWet: boolean;
+    isSepia: boolean;
+    isInverted: boolean;
+};
+
+const imageEffectsInitialState: ImageEffects = {
     isBlurred: false,
     isBlackAndWhite: false,
     isBrightened: false,
@@ -39,10 +47,9 @@ const imageEffectsInitialState = {
 };
 
 export default function Create() {
-    
     const [outputImage, setOutputImage] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
-    const [imageEffects, setImageEffects] = useState(imageEffectsInitialState);
+    const [imageEffects, setImageEffects] = useState<ImageEffects>(imageEffectsInitialState);
     const { theme } = useTheme();
     const [color, setColor] = useState("#ffffff");
 
@@ -50,9 +57,7 @@ export default function Create() {
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
-        defaultValues: {
-            prompt: "",
-        },
+        defaultValues: { prompt: "" },
     });
 
     const onSubmit = useCallback(async (values: z.infer<typeof formSchema>) => {
@@ -63,15 +68,17 @@ export default function Create() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(values),
             });
-            if (response.ok) {
-                const data = await response.json();
-                if (data && data.url) {
-                    setOutputImage(data.url);
-                } else {
-                    throw new Error("Invalid response from server");
-                }
+
+            if (!response.ok) {
+                const errorMessage = await response.text();
+                throw new Error(`Server error: ${response.status} - ${errorMessage}`);
+            }
+
+            const data = await response.json();
+            if (data?.url) {
+                setOutputImage(data.url);
             } else {
-                throw new Error("Error fetching image");
+                throw new Error("Invalid response from server");
             }
         } catch (error) {
             console.error("Error generating image:", error);
@@ -86,11 +93,13 @@ export default function Create() {
     }, [toast]);
 
     const handleDownload = useCallback(() => {
-        if (outputImage) window.open(outputImage, '_blank');
+        if (outputImage) {
+            window.open(outputImage, '_blank');
+        }
     }, [outputImage]);
 
-    const toggleEffect = useCallback((effect: keyof typeof imageEffects) => {
-        setImageEffects(prev => ({
+    const toggleEffect = useCallback((effect: keyof ImageEffects) => {
+        setImageEffects((prev) => ({
             ...prev,
             [effect]: !prev[effect],
             ...(effect === 'isBrightened' && prev.isDarkened ? { isDarkened: false } : {}),
@@ -116,8 +125,6 @@ export default function Create() {
                         return `${className} sepia`;
                     case 'isInverted':
                         return `${className} invert`;
-                    default:
-                        return className;
                 }
             }
             return className;
@@ -130,13 +137,7 @@ export default function Create() {
 
     return (
         <div className="w-full h-full p-3 flex flex-col items-center justify-start pt-[72px] overflow-auto relative">
-            <Particles
-                className="absolute inset-0"
-                quantity={100}
-                ease={20}
-                color={color}
-                refresh
-            />
+            <Particles className="absolute inset-0" quantity={100} ease={20} color={color} refresh />
             <div className="w-full p-3 relative z-10">
                 <h1 className="text-center font-bold text-white text-3xl sm:text-4xl md:text-5xl">
                     Create
@@ -170,11 +171,7 @@ export default function Create() {
                             />
                             <Button className="shadow-2xl" type="submit" disabled={loading}>
                                 <span className="whitespace-pre-wrap text-center text-sm font-medium leading-none tracking-tight lg:text-lg sm:w-auto">
-                                    {loading ? (
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                        "Generate"
-                                    )}
+                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Generate"}
                                 </span>
                             </Button>
                         </form>
@@ -201,7 +198,7 @@ export default function Create() {
                                 {Object.entries(imageEffects).map(([effect, isActive]) => (
                                     <ShimmerButton
                                         key={effect}
-                                        onClick={() => toggleEffect(effect as keyof typeof imageEffects)}
+                                        onClick={() => toggleEffect(effect as keyof ImageEffects)}
                                         className={`px-3 py-1 text-sm ${isActive ? 'bg-blue-500' : ''}`}
                                     >
                                         <span className="text-white">
