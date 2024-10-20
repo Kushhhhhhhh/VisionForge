@@ -32,9 +32,14 @@ export async function POST(request: NextRequest) {
     }
 
     const randomSeed = Math.floor(Math.random() * 10000000) + 1;
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?model=flux&seed=${randomSeed}&width=512&height=512&nologo=true&enhance=true`;
+    const model = 'flux';  
+    const width = 400;     
+    const height = 400; 
+
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?model=${model}&seed=${randomSeed}&width=${width}&height=${height}&nologo=true&enhance=true`;
 
     try {
+    
         const response = await fetch(imageUrl, {
             method: 'GET',
             headers: {
