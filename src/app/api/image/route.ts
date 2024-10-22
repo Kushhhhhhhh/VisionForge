@@ -29,22 +29,23 @@ export async function POST(request: NextRequest) {
     }
 
     const randomSeed = generateRandomNumber();
-    const imageURL = `https://image.pollinations.ai/prompt/${encodeURIComponent(
+    const width = 400;
+    const height = 400;
+    const model = 'flux'; 
+    const imageUrl = `https://pollinations.ai/p/${encodeURIComponent(
         prompt
-    )}?seed=${randomSeed}&width=512&height=512&nologo=True`;
-
-    await fetch(imageURL);
+    )}?width=${width}&height=${height}&seed=${randomSeed}&model=${model}&nologo=True`;
 
     await prisma.post.create({
         data: {
             prompt: prompt,
-            url: imageURL,
+            url: imageUrl,
             seed: randomSeed,
             userId: user.id,
         },
     });
 
-    return NextResponse.json({ url: imageURL });
+    return NextResponse.json({ url: imageUrl });
 }
 
 export async function GET() {
